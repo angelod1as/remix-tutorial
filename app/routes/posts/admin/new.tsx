@@ -4,6 +4,7 @@ import { json, redirect } from "@remix-run/node";
 import { createPost } from "~/models/post.server";
 
 import type { ActionFunction } from "@remix-run/node";
+import invariant from "tiny-invariant";
 
 type ActionData =
   | {
@@ -30,6 +31,10 @@ export const action: ActionFunction = async ({ request }) => {
   if (hasErrors) {
     return json<ActionData>(errors);
   }
+
+  invariant(typeof title === "string", "title must be a string");
+  invariant(typeof slug === "string", "slug must be a string");
+  invariant(typeof markdown === "string", "markdown must be a string");
 
   await createPost({ title, slug, markdown });
 
