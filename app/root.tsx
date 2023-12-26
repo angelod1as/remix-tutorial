@@ -1,13 +1,42 @@
 import {
   Form,
+  Link,
   Links,
   LiveReload,
   Meta,
+  NavLink,
+  Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
+  useNavigation,
 } from "@remix-run/react";
 
+import { createEmptyContact, getContacts } from "./data";
+
+import type { LinksFunction } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+
+import appStylesHref from "./app.css";
+
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: appStylesHref },
+];
+
+export const loader = async () => {
+  const contacts = await getContacts();
+  return json({ contacts });
+};
+
+export const action = async () => {
+  const contact = await createEmptyContact();
+  return redirect(`/contacts/${contact.id}/edit`);
+};
+
 export default function App() {
+  const { contacts } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+
   return (
     <html lang="en">
       <head>
@@ -35,15 +64,40 @@ export default function App() {
             </Form>
           </div>
           <nav>
-            <ul>
-              <li>
-                <a href={`/contacts/1`}>Your Name</a>
-              </li>
-              <li>
-                <a href={`/contacts/2`}>Your Friend</a>
-              </li>
-            </ul>
+            {contacts.length ? (
+              <ul>
+                {contacts.map((contact) => (
+                  <li key={contact.id}>
+                    <NavLink
+                      className={({ isActive, isPending }) =>
+                        isActive ? "active" : isPending ? "pending" : ""
+                      }
+                      to={`contacts/${contact.id}`}
+                    >
+                      {contact.first || contact.last ? (
+                        <>
+                          {contact.first} {contact.last}
+                        </>
+                      ) : (
+                        <i>No Name</i>
+                      )}{" "}
+                      {contact.favorite ? <span>★</span> : null}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>
+                <i>No contacts</i>
+              </p>
+            )}
           </nav>
+        </div>
+        <div
+          id="detail"
+          className={navigation.state === "loading" ? "loading" : ""}
+        >
+          <Outlet />
         </div>
 
         <ScrollRestoration />
